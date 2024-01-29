@@ -2,22 +2,21 @@ namespace Shared
 
 open System
 
-type Todo = { Id: Guid; Description: string }
+type MathExpression = { Value: string; Result: int }
 
-module Todo =
-    let isValid (description: string) =
-        String.IsNullOrWhiteSpace description |> not
+module MathExpression =
+    let isValid (exp: string) =
+        exp |> Seq.forall (fun c -> Char.IsLetter(c) || c = ' ')
 
-    let create (description: string) = {
-        Id = Guid.NewGuid()
-        Description = description
-    }
+type ExprTree =
+    | Op of Operation: char * Left: ExprTree * Right: ExprTree
+    | Value of int
 
 module Route =
     let builder typeName methodName =
         sprintf "/api/%s/%s" typeName methodName
 
-type ITodosApi = {
-    getTodos: unit -> Async<Todo list>
-    addTodo: Todo -> Async<Todo>
+type IExpressionCalculatorApi = {
+    getResult: string -> Async<int>
+    getExpressionTree: string -> Async<ExprTree>
 }
