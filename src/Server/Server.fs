@@ -1,5 +1,6 @@
 module Server
 
+open System.Text.RegularExpressions
 open Fable.Remoting.Server
 open Fable.Remoting.Giraffe
 open Saturn
@@ -12,21 +13,21 @@ module ExpressionTree =
     /// check if symbol is math operator
     /// </summary>
     /// <param name="c"></param>
-    let private isOperator c =
-        c = '+' || c = '-' || c = '*' || c = '/' || c = '%'
+    let isOperator c =
+        c = "+" || c = "-" || c = "*" || c = "/" || c = "%"
 
     /// <summary>
     /// Get priority of the operation
     /// </summary>
     /// <param name="op">operation symbol. Error if can't find operation</param>
-    let private getPriority op =
+    let getPriority op =
         match op with
-        | '(' -> 1
-        | '+'
-        | '-' -> 2
-        | '*'
-        | '/'
-        | '%' -> 3
+        | "(" -> 1
+        | "+"
+        | "-" -> 2
+        | "*"
+        | "/"
+        | "%" -> 3
         | _ -> failwith "Can't find operation"
 
     /// <summary>
@@ -38,18 +39,17 @@ module ExpressionTree =
     /// <param name="stack">values stack</param>
     let rec parse expr ops stack =
         match expr with
-        // if
         | [] ->
             let _, stack = buildWhile (fun _ -> true) ops stack
             List.head stack
 
         // if element is '(' then we put bracket in operation stack and start recursion from rest part of list
-        | '(' :: rest -> parse rest ('(' :: ops) stack
+        | "(" :: rest -> parse rest ("(" :: ops) stack
 
         // if element is ')' then build tree while char won't be '('
-        | ')' :: rest ->
-            let ops, stack = buildWhile (fun op -> op <> '(') ops stack
-            parse rest (List.tail ops) stack
+        | ch :: rest when isOperator ch ->
+            let ops, stack = buildWhile (fun op -> getPriority op >= getPriority ch) ops stack
+            parse rest (ch :: ops) stack
 
         // if element is operator build tree while stack priority is higher than current
         | ch :: rest when isOperator ch ->
@@ -57,7 +57,7 @@ module ExpressionTree =
             parse rest (ch :: ops) stack
 
         // recursion with new value element in stack
-        | ch :: rest -> parse rest ops (Value(int (Char.GetNumericValue ch)) :: stack) // push
+        | ch :: rest -> parse rest ops (Value(int ch) :: stack) // push
 
     /// <summary>
     /// function to build tree roots from values in the stack while predicate is true
@@ -85,21 +85,36 @@ module ExpressionTree =
             let r = compute R
 
             match op with
-            | '+' -> l + r
-            | '-' -> l - r
-            | '*' -> l * r
-            | '/' -> l / r
-            | '%' -> l % r
+            | "+" -> l + r
+            | "-" -> l - r
+            | "*" -> l * r
+            | "/" -> l / r
+            | "%" -> l % r
             | _ -> failwith "Неизвестная операция"
 
 let calculatorApi = {
     getResult =
         fun exp -> async {
-            let tree = ExpressionTree.parse (List.ofSeq exp) [] []
-            return ExpressionTree.compute tree
+            let l =
+                List.ofArray (Regex.Split(exp, "(\\d+|\\D)") |> Array.filter (fun x -> x <> ""))
+
+            let tree = ExpressionTree.parse l [] []
+
+            return {
+                Value = exp
+                Result = ExpressionTree.compute tree
+            }
         }
 
-    getExpressionTree = fun exp -> async { return ExpressionTree.parse (List.ofSeq exp) [] [] }
+    getExpressionTree =
+        fun exp -> async {
+            let l =
+                List.ofArray (Regex.Split(exp, "(\\d+|\\D)") |> Array.filter (fun x -> x <> ""))
+
+            let tree = ExpressionTree.parse l [] []
+
+            return tree
+        }
 }
 
 let webApp =

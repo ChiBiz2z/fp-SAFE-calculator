@@ -5,14 +5,14 @@ open Fable.Remoting.Client
 open Shared
 
 type Model = {
-    History: MathExpression list
+    History: GetExpressionResultResponse list
     Input: string
 }
 
 type Msg =
     | SetInput of string
     | CalculateExpression
-    | ExpRes of MathExpression
+    | ExpRes of GetExpressionResultResponse
 
 let calculatorApi =
     Remoting.createApi ()
@@ -59,14 +59,14 @@ let private todoAction model dispatch =
             Html.button [
                 prop.className
                     "flex-no-shrink p-2 px-12 rounded bg-teal-600 outline-none focus:ring-2 ring-teal-300 font-bold text-white hover:bg-teal disabled:opacity-30 disabled:cursor-not-allowed"
-                prop.disabled (MathExpression.isValid model.Input |> not)
+                prop.disabled (GetExpressionResultResponse.isValid model.Input |> not)
                 prop.onClick (fun _ -> dispatch CalculateExpression)
                 prop.text "Calculate"
             ]
 
             Html.p [
                 prop.text "Введенное математическое выражение не может быть распознано"
-                prop.hidden (MathExpression.isValid model.Input |> not)
+                prop.hidden (GetExpressionResultResponse.isValid model.Input |> not)
             ]
         ]
     ]
@@ -79,7 +79,7 @@ let private todoList model dispatch =
                 prop.className "list-decimal ml-6"
                 prop.children [
                     for exp in model.History do
-                        Html.li [ prop.className "my-1"; prop.text exp.Value ]
+                        Html.li [ prop.className "my-1"; prop.text $"{exp.Value} = {exp.Result}" ]
                 ]
             ]
 

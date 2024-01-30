@@ -2,14 +2,14 @@ namespace Shared
 
 open System
 
-type MathExpression = { Value: string; Result: int }
+type GetExpressionResultResponse = { Value: string; Result: int }
 
-module MathExpression =
+module GetExpressionResultResponse =
     let isValid (exp: string) =
         exp |> Seq.forall (fun c -> Char.IsLetter(c) || c = ' ')
 
 type ExprTree =
-    | Op of Operation: char * Left: ExprTree * Right: ExprTree
+    | Op of Operation: string * Left: ExprTree * Right: ExprTree
     | Value of int
 
 module Route =
@@ -17,6 +17,6 @@ module Route =
         sprintf "/api/%s/%s" typeName methodName
 
 type IExpressionCalculatorApi = {
-    getResult: string -> Async<int>
+    getResult: string -> Async<GetExpressionResultResponse>
     getExpressionTree: string -> Async<ExprTree>
 }
