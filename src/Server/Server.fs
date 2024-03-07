@@ -10,6 +10,7 @@ open Shared
 
 //todo remove to another module
 module ExpressionTree =
+    /// <summary>
     /// check if symbol is math operator
     /// </summary>
     /// <param name="c"></param>
@@ -47,9 +48,9 @@ module ExpressionTree =
         | "(" :: rest -> parse rest ("(" :: ops) stack
 
         // if element is ')' then build tree while char won't be '('
-        | ch :: rest when isOperator ch ->
-            let ops, stack = buildWhile (fun op -> getPriority op >= getPriority ch) ops stack
-            parse rest (ch :: ops) stack
+        | ")" :: rest ->
+            let ops, stack = buildWhile (fun op -> op <> "(") ops stack
+            parse rest (List.tail ops) stack
 
         // if element is operator build tree while stack priority is higher than current
         | ch :: rest when isOperator ch ->
